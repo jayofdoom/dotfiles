@@ -1,0 +1,4 @@
+# For specific Zoom windows
+#for_window [title="^(Zoom - Licensed Account|About)$"] border pixel, floating enable
+# Open Zoom Meeting windows on a new workspace (a bit hacky)
+#for_window [app_id="zoom" title="Zoom Meeting(.*)?"] workspace next_on_output --create, move container to workspace current, floating disable, inhibit_idle open
