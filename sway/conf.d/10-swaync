@@ -1,2 +1,4 @@
 exec swaync
 bindsym $mod+Shift+n exec swaync-client -t -sw
+
+exec nm-applet

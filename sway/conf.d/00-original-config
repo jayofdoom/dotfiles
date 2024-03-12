@@ -8,7 +8,7 @@ set $menu fuzzel | xargs swaymsg exec --
 focus_on_window_activation focus
 focus_follows_mouse no
 
-output * bg /home/jay/Pictures/falcon-wallpaper.jpg center
+output * bg /home/jay/Pictures/redyellow.png fill
 
 bindsym $mod+Return exec $term
 bindsym $mod+Shift+q kill

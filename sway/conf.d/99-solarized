@@ -1,0 +1,136 @@
+# Fonts
+font pango: Jetbrains Mono Nerd Font Mono Bold 12
+
+exec --no-startup-id /usr/lib/gsd-xsettings
+
+set $username jay
+set $filemanager nautilus
+set $browser exec firefox  
+
+exec export chromium --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-logging =stderr --v=1 
+exec export MOZ_ENABLE_WAYLAND=1
+exec export QT_QPA_PLATFORM=wayland-egl
+exec export CLUTTER_BACKEND=wayland
+exec export ECORE_EVAS_ENGINE=wayland-egl
+exec export ELM_ENGINE=wayland_egl
+exec export SDL_VIDEODRIVER=wayland
+exec export NO_AT_BRIDGE=1
+exec export `gnome-keyring-daemon --start --components=ssh`
+exec export _JAVA_AWT_WM_NONREPARENTING=1
+exec export QT_AUTO_SCREEN_SCALE_FACTOR=0
+exec export TDESKTOP_DISABLE_GTK_INTEGRATION=1
+exec export SWAYSOCK=/run/user/$(id -u)/sway-ipc.$(id -u).$(pgrep -x sway).sock
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
+exec export DISPLAY=:0
+
+#for_window [class="^.*"] border pixel 12
+gaps inner 4
+gaps outer 4
+smart_gaps on
+default_border pixel 3
+#smart_borders on
+#set $borderwidth 1
+hide_edge_borders both
+
+# set-Tema de gnome
+exec_always {
+#tema
+    gsettings set org.gnome.desktop.interface gtk-theme "Solarized-Dark-Magenta-3.36"
+    #gsettings set org.gnome.desktop.interface icon-theme "Yaru-Green"
+
+#integracion con gnome
+    gsettings set org.gnome.nautilus.preferences always-use-location-entry true
+    gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Roboto Bold 10'
+    gsettings set org.gtk.Settings.FileChooser window-size '(1100,700)'
+    gsettings set org.gnome.desktop.default-applications.terminal exec kitty
+    gsettings set org.gnome.desktop.wm.preferences button-layout ''
+  }
+
+#exec "hash dbus-update-activation-environment 2>/dev/null; \
+#     dbus-update-activation-environment --all; \
+#     dbus-update-activation-environment --systemd; \
+#     systemctl --user start sway-session.target"
+
+#exec_always gsettings set $gnome-schema gtk-theme 'Arc-Dark'
+
+
+###### THEMES SWAY BORDER WINDOW ETC
+# Defining colors
+set {
+	$pink		#ff79c6
+	$white		#ffffff
+	$cyan		#00afd7
+	$acqua		#00d787
+	$wine		#72003e
+	$magenta	#d33682
+	$orange		#aa8700
+	$silver		#e4e4e4
+	$elegant	#1b1d1e
+	$transparent	#FF000000
+	#$transparent	#0000007f
+}
+
+# Set some nice colors		border	 bg       text	   indicator child_border
+#client.focused        	 	$elegant $magenta $elegant $white    $magenta
+#client.unfocused        	$elegant $elegant $magenta $white    $elegant
+#client.focused_inactive 	$elegant $elegant $acqua   $magenta  $acqua
+#client.urgent	          	$elegant $magenta $silver  $magenta  $magenta
+#client.placeholder	        $elegant $magenta $silver  $white    $magenta
+
+client.focused        	 	$elegant $orange $elegant $white    $orange
+client.unfocused        	$elegant $elegant $orange $white    $elegant
+client.focused_inactive 	$elegant $elegant $acqua   $orange  $acqua
+client.urgent	          	$elegant $orange $silver  $orange  $orange
+client.placeholder	        $elegant $orange $silver  $white    $orange
+
+
+set $power_mode "|| Menu: (p) poweroff, (r) reboot (q) quit sesion, (l) lockscreen ||"
+bindsym $mod+Shift+p      mode $power_mode
+mode $power_mode {
+    bindsym p         exec systemctl poweroff
+    bindsym r         exec systemctl reboot
+    bindsym l         exec swaylock -i $lockscreen , mode "default"
+    bindsym q         exec swaynag -t warning -m 'Are you sure you want to exit?' -b 'Yes, end sway session' 'swaymsg exit'
+    bindsym h         exec systemctl hibernate
+    #bindsym s        exec sudo  /lib/systemd/systemd-sleep hybrid-sleep
+    bindsym s         exec pm-suspend
+
+# Hibernate
+  bindsym $mod+Shift+z exec swaynag -t warning -m 'Sleepy time?!?!' -b 'ZzZz...' 'systemctl hibernate'
+  bindsym Return    mode "default"
+  bindsym Escape    mode "default"
+}
+
+###---------------------------------------------------------------------------------> MULTIMEDIA
+
+# Custom Keys Brightness
+# Keys Default
+bindsym XF86AudioPlay  exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause"
+bindsym XF86AudioNext  exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next"
+bindsym XF86AudioPrev  exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous"
+
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="bubble"] floating enable
+for_window [window_role="task_dialog"] floating enable
+for_window [window_role="Preferences"] floating enable
+
+for_window [window_role="task_dialog|bubble|page-info|Preferences|pop-up"] floating enable
+for_window [window_role="Open Files"] floating enable sticky
+for_window [window_role="File Operation Progress"] floating enable sticky
+for_window [window_role="Save As"] floating enable
+
+for_window [class="qBittorrent" window_role="pop-up"] floating enable
+for_window [class="$terminal -e alsamixer" window_role="Open"] floating enable
+#for_window [class="steam_app.*"] fullscreen enable
+#for_window [class="steam_app*"] inhibit_idle focus
+for_window [window_type="dialog"] floating enable
+for_window [window_type="menu"] floating enable
+#for_window [class="Nautilus"] floating enable
+
+# Sticky window
+for_window [instance="file_progress"]  sticky enable
+for_window [class="info|Mate-color-select|gcolor2|timesup|QtPass|GtkFileChooserDialog"] sticky enable
+
+# Focus window settings
+no_focus [window_role="pop-up"]
+#for_window [class="(?i)"] focus

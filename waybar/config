@@ -1,24 +1,20 @@
 {
     "spacing": 4, // Gaps between modules (4px)
-    "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad"],
+    "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "custom/weather"],
     "modules-center": ["sway/window"],
-    "modules-right": ["idle_inhibitor", "pulseaudio", "battery", "clock", "tray"],
-    // "sway/workspaces": {
-    //     "disable-scroll": true,
-    //     "all-outputs": true,
-    //     "warp-on-scroll": false,
-    //     "format": "{name}: {icon}",
-    //     "format-icons": {
-    //         "1": "",
-    //         "2": "",
-    //         "3": "",
-    //         "4": "",
-    //         "5": "",
-    //         "urgent": "",
-    //         "focused": "",
-    //         "default": ""
-    //     }
-    // },
+    "modules-right": ["idle_inhibitor", "pulseaudio", "battery", "clock#utc", "clock#pst", "tray", "custom/notification"],
+    "sway/workspaces": {
+         "disable-markup": true,
+	 "disable-scroll": true,
+         "all-outputs": true,
+         "warp-on-scroll": false,
+         "format": "{name}: {icon}",
+         "format-icons": {
+             "urgent": "",
+             "focused": "",
+             "default": ""
+         }
+    },
     "keyboard-state": {
         "numlock": true,
         "capslock": true,
@@ -34,25 +30,30 @@
     "sway/scratchpad": {
         "format": "{icon} {count}",
         "show-empty": false,
-        "format-icons": ["", ""],
+        "format-icons": [" ", " "],
         "tooltip": true,
         "tooltip-format": "{app}: {title}"
     },
     "idle_inhibitor": {
         "format": "{icon}",
         "format-icons": {
-            "activated": "",
-            "deactivated": ""
+            "activated": " ",
+            "deactivated": " "
         }
     },
     "tray": {
         // "icon-size": 21,
         "spacing": 10
     },
-    "clock": {
-        // "timezone": "America/New_York",
+    "clock#utc": {
+        "timezone": "Etc/UTC",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-        "format-alt": "{:%Y-%m-%d}"
+        "format": "{:%R %Z}"
+    },
+    "clock#pst": {
+        "timezone": "America/Los_Angeles",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "format": "{:%Y-%m-%d %I:%M %p %Z}"
     },
     "cpu": {
         "format": "{usage}% ",
@@ -67,30 +68,41 @@
             "warning": 30,
             "critical": 15
         },
-        "format": "{capacity}% {icon}",
-        "format-charging": "{capacity}% ",
-        "format-plugged": "{capacity}% ",
-        "format-alt": "{time} {icon}",
-        "format-icons": ["", "", "", "", ""]
+        "format": "{capacity}% {icon} ",
+        "format-charging": "{capacity}%   ",
+        "format-plugged": "{capacity}%   ",
+        "format-icons": ["", "", "", "", ""],
+        "align": 0,
     },
     "pulseaudio": {
         // "scroll-step": 1, // %, can be a float
-        "format": "{volume}% {icon} {format_source}",
-        "format-bluetooth": "{volume}% {icon} {format_source}",
-        "format-bluetooth-muted": " {icon} {format_source}",
-        "format-muted": " {format_source}",
-        "format-source": "{volume}% ",
-        "format-source-muted": "",
+        "format": "{volume}% {icon} ",
+        "format-muted": "",
         "format-icons": {
-            "headphone": "",
-            "hands-free": "",
-            "headset": "",
-            "phone": "",
-            "portable": "",
-            "car": "",
             "default": ["", "", ""]
         },
         "on-click": "pavucontrol"
     },
+    "custom/weather": {
+    	"exec": "curl http://wttr.in/98499?format=\"%c+%t\"",
+	"interval": 600,
+	"format": "{}"
+    },
+    "custom/notification": {
+	"tooltip": false,
+	"format": "{icon}",
+	"format-icons": {
+		"notification": "<span foreground='red'><small><sup>⬤</sup></small></span>",
+		"none": " ",
+		"dnd-notification": "<span foreground='red'><small><sup>⬤</sup></small></span>",
+		"dnd-none": " "
+	},
+	"return-type": "json",
+	"exec-if": "which swaync-client",
+	"exec": "swaync-client -swb",
+	"on-click": "sleep 0.1 && swaync-client -t -sw",
+	"on-click-right": "sleep 0.1 && swaync-client -d -sw",
+	"escape": true
+    }
 }
 
