@@ -1,7 +1,13 @@
-#output DP-4 resolution 2560x2880 position 0 0 scale 1.33
-#output DP-3 resolution 2560x1440 position 1924 480 scale 1
-#output eDP-1 resolution 2256x1504 position 0 2165 scale 1.33
+#set $dualup 'LG Electronics LG SDQHD 304NTRLD9846'
+#set $midmon 'LG Electronics LG ULTRAGEAR 309MXDM2U722'
+set $midmon DP-10 
+set $dualup DP-9
+set $laptop eDP-1
 
-#bindsym $mod+z output eDP-1 disable; output DP-3 enable; output DP-4 enable
-#bindsym $mod+Shift+z output eDP-1 enable;  output DP-3 disable; output DP-4 disable
+output $dualup resolution 2560x2880 position 0 0 scale 1
+#output $dualup resolution 2560x2880 position 0 1504 scale 1
+output $midmon resolution 2560x1440 position 2560 720 scale 1 
+output $laptop resolution 2256x1504 position 0 0 scale 1
 
+bindsym $mod+z output $dualup enable; output $midmon enable; workspace 1 output $dualup; workspace 2 output $dualup; workspace 3 output $dualup; workspace 4 output $dualup; workspace 5 output $dualup; workspace 6 output $midmon; workspace 7 output $midmon; workspace 8 output $midmon; workspace 9 output $midmon; workspace 10 output $midmon; output $laptop disable;
+bindsym $mod+Shift+z output $laptop enable; workspace 1 output $laptop; workspace 2 output $laptop; workspace 3 output $laptop; workspace 4 output $laptop; workspace 5 output $laptop; workspace 6 output $laptop; workspace 7 output $laptop; workspace 8 output $laptop; workspace 9 output $laptop; workspace 10 output $laptop; output $dualup disable; output $midmon disable;

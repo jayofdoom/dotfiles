@@ -1,14 +1,63 @@
-exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
-exec /usr/libexec/polkit-gnome-authentication-agent-1
-
 set $mod Mod4
 set $term kitty
 set $menu fuzzel | xargs swaymsg exec --
 
+bar {
+    swaybar_command waybar
+    position top
+    colors {
+        statusline #ffffff
+        background #323232
+        inactive_workspace #32323200 #32323200 #5c5c5c
+    }
+}
+
+#exec export MOZ_ENABLE_WAYLAND=1
+#exec export MOZ_DBUS_REMOTE=1
+#exec export QT_QPA_PLATFORM=wayland
+#exec export CLUTTER_BACKEND=wayland
+#exec export ECORE_EVAS_ENGINE=wayland
+#exec export ELM_ENGINE=wayland
+#exec export SDL_VIDEODRIVER=wayland
+#exec export NO_AT_BRIDGE=1
+#exec export _JAVA_AWT_WM_NONREPARENTING=1
+#exec export TDESKTOP_DISABLE_GTK_INTEGRATION=1
+
+exec export SWAYSOCK=/run/user/$(id -u)/sway-ipc.$(id -u).$(pgrep -x sway).sock
+
+#exec export XDG_CURRENT_DESKTOP=sway
+#exec export XDG_CURRENT_SESSION=sway
+#exec export XDG_SESSION_DESKTOP=sway
+#exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XDG_CURRENT_SESSION=sway MOZ_DBUS_REMOTE=1 XDG_SESSION_DESKTOP=sway
+#exec export DISPLAY=:0
+exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY
+exec systemctl --user import-environment
+exec swaync
+bindsym $mod+Shift+n exec swaync-client -t -sw
+
+#exec dbus-update-activation-environment --all
+xwayland force
+#exec /usr/libexec/sway-systemd/session.sh
+#exec /usr/libexec/polkit-gnome-authentication-agent-1
+exec /usr/libexec/gsd-xsettings
+exec gnome-keyring-daemon --start --components=ssh
+exec export $(gnome-keyring-daemon)
+exec xrdb -load ~/.Xresources
+#exec /usr/libexec/sway-systemd/wait-sni-ready && sleep 10 && systemctl --user start sway-xdg-autostart.target
+#exec nm-applet
+#exec blueman-applet
+#exec solaar
+
+# Stylings
+smart_gaps off
+default_border pixel 5
+smart_borders off
+hide_edge_borders both
+
 focus_on_window_activation focus
 focus_follows_mouse no
 
-output * bg /home/jay/Pictures/redyellow.png fill
+output * bg #443311 solid_color
 
 bindsym $mod+Return exec $term
 bindsym $mod+Shift+q kill
@@ -84,15 +133,93 @@ bindsym $mod+space focus mode_toggle
 bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+minus scratchpad show
 
-bar {
-    swaybar_command waybar
-    position top
-    status_command i3status-rs
-    colors {
-        statusline #ffffff
-        background #323232
-        inactive_workspace #32323200 #32323200 #5c5c5c
-    }
+font pango: Jetbrains Mono Nerd Font Mono Bold 14
+
+smart_gaps off
+default_border pixel 5
+smart_borders off
+hide_edge_borders both
+
+exec_always {
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+    gsettings set org.gnome.desktop.interface gtk-theme "Quartz-Dark-Red"
+    gsettings set org.x.apps.statusicon sn-watcher-advertise-host true
+    gsettings set org.gnome.nautilus.preferences always-use-location-entry true
+    gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Noto Sans 14'
+    gsettings set org.gtk.Settings.FileChooser window-size '(1100,700)'
+    gsettings set org.gnome.desktop.default-applications.terminal exec kitty
+    gsettings set org.gnome.desktop.wm.preferences button-layout ''
 }
 
+###### THEMES SWAY BORDER WINDOW ETC
+# Defining colors
+set {
+    $pink       #ff79c6
+    $white      #ffffff
+    $cyan       #00afd7
+    $acqua      #00d787
+    $wine       #72003e
+    $magenta    #d33682
+    $orange     #aa8700
+    $silver     #e4e4e4
+    $elegant    #1b1d1e
+    $transparent    #FF000000
+    #$transparent   #0000007f
+}
 
+# Set some nice colors      border   bg       text     indicator child_border
+#client.focused             $elegant $magenta $elegant $white    $magenta
+#client.unfocused           $elegant $elegant $magenta $white    $elegant
+#client.focused_inactive    $elegant $elegant $acqua   $magenta  $acqua
+#client.urgent              $elegant $magenta $silver  $magenta  $magenta
+#client.placeholder         $elegant $magenta $silver  $white    $magenta
+
+client.focused              $elegant $orange $elegant $white    $orange
+client.unfocused            $elegant $elegant $orange $white    $elegant
+client.focused_inactive     $elegant $elegant $acqua   $orange  $acqua
+client.urgent               $elegant $orange $silver  $orange  $orange
+client.placeholder          $elegant $orange $silver  $white    $orange
+
+set $power_mode "|| Menu: (p) poweroff, (r) reboot (q) quit sesion, (l) lockscreen ||"
+bindsym $mod+Shift+p      mode $power_mode
+mode $power_mode {
+    bindsym p         exec systemctl poweroff
+    bindsym r         exec systemctl reboot
+    bindsym l         exec swaylock -i $lockscreen , mode "default"
+    bindsym q         exec swaynag -t warning -m 'Are you sure you want to exit?' -b 'Yes, end sway session' 'swaymsg exit'
+    bindsym h         exec systemctl hibernate
+    bindsym s         exec systemctl hybrid-sleep
+
+# Hibernate
+  bindsym Return    mode "default"
+  bindsym Escape    mode "default"
+}
+
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="bubble"] floating enable
+for_window [window_role="task_dialog"] floating enable
+for_window [window_role="Preferences"] floating enable
+
+for_window [window_role="task_dialog|bubble|page-info|Preferences|pop-up"] floating enable
+for_window [window_role="Open Files"] floating enable sticky
+for_window [window_role="File Operation Progress"] floating enable sticky
+for_window [window_role="Save As"] floating enable
+
+for_window [class="qBittorrent" window_role="pop-up"] floating enable
+for_window [class="$terminal -e alsamixer" window_role="Open"] floating enable
+#for_window [class="steam_app.*"] fullscreen enable
+#for_window [class="steam_app*"] inhibit_idle focus
+for_window [window_type="dialog"] floating enable
+for_window [window_type="menu"] floating enable
+#for_window [class="Nautilus"] floating enable
+
+# Sticky window
+for_window [instance="file_progress"]  sticky enable
+for_window [class="info|Mate-color-select|gcolor2|timesup|QtPass|GtkFileChooserDialog"] sticky enable
+
+# Focus window settings
+no_focus [window_role="pop-up"]
+#for_window [class="(?i)"] focus
+
+
+exec systemctl --user start sway-xdg-autostart.target
