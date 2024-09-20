@@ -33,12 +33,15 @@ window#waybar.solo {
 }
 
 #workspaces button {
-    color:      #443300;
+    color:      #aa8700;
     transition: none;
 }
 
 #workspaces button.visible {
-    border-radius: 3.5;
+    margin-left: 0;
+    margin-right: 0;
+    border-top: 2.5px solid #666666;
+    color: #ffff33;
     transition: none;
 }
 

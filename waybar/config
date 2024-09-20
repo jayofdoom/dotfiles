@@ -5,8 +5,8 @@
     "modules-right": ["idle_inhibitor", "pulseaudio", "battery", "clock#utc", "clock#pst", "tray", "custom/notification"],
     "sway/workspaces": {
          "disable-markup": true,
-	 "disable-scroll": true,
-         "all-outputs": true,
+     "disable-scroll": true,
+         "all-outputs": false,
          "warp-on-scroll": false,
          "format": "{name}: {icon}",
          "format-icons": {
@@ -14,15 +14,6 @@
              "focused": "",
              "default": ""
          }
-    },
-    "keyboard-state": {
-        "numlock": true,
-        "capslock": true,
-        "format": "{name} {icon}",
-        "format-icons": {
-            "locked": "",
-            "unlocked": ""
-        }
     },
     "sway/mode": {
         "format": "<span style=\"italic\">{}</span>"
@@ -84,25 +75,26 @@
         "on-click": "pavucontrol"
     },
     "custom/weather": {
-    	"exec": "curl http://wttr.in/98499?format=\"%c+%t\"",
-	"interval": 600,
-	"format": "{}"
+        "exec": "curl http://wttr.in/Lakewood,WA?format=\"%c+%t&u\"",
+        "interval": 600,
+        "tooltip": false,
+        "format": "{}"
     },
     "custom/notification": {
-	"tooltip": false,
-	"format": "{icon}",
-	"format-icons": {
-		"notification": "<span foreground='red'><small><sup>⬤</sup></small></span>",
-		"none": " ",
-		"dnd-notification": "<span foreground='red'><small><sup>⬤</sup></small></span>",
-		"dnd-none": " "
-	},
-	"return-type": "json",
-	"exec-if": "which swaync-client",
-	"exec": "swaync-client -swb",
-	"on-click": "sleep 0.1 && swaync-client -t -sw",
-	"on-click-right": "sleep 0.1 && swaync-client -d -sw",
-	"escape": true
+    "tooltip": false,
+    "format": "{icon}",
+    "format-icons": {
+        "notification": "<span foreground='red'><small><sup>⬤</sup></small></span>",
+        "none": " ",
+        "dnd-notification": "<span foreground='red'><small><sup>⬤</sup></small></span>",
+        "dnd-none": " "
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "sleep 0.1 && swaync-client -t -sw",
+    "on-click-right": "sleep 0.1 && swaync-client -d -sw",
+    "escape": true
     }
 }
 
