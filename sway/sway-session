@@ -20,8 +20,9 @@ export WLR_RENDERER=vulkan
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
+#export SSH_AUTH_SOCK=/run/user/1000/gcr/ssh
 
 #systemctl --user import-environment
 
-dbus-run-session -- sway
-#sway
+#dbus-run-session -- sway
+dbus-launch sway
