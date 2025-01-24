@@ -1,3 +1,6 @@
+exec dbus-update-activation-environment --all
+exec dbus-update-activation-environment --systemd --all
+
 set $mod Mod4
 set $term kitty
 set $menu fuzzel | xargs swaymsg exec --
@@ -28,9 +31,10 @@ exec export SWAYSOCK=/run/user/$(id -u)/sway-ipc.$(id -u).$(pgrep -x sway).sock
 #exec export XDG_CURRENT_DESKTOP=sway
 #exec export XDG_CURRENT_SESSION=sway
 #exec export XDG_SESSION_DESKTOP=sway
-#exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XDG_CURRENT_SESSION=sway MOZ_DBUS_REMOTE=1 XDG_SESSION_DESKTOP=sway
+##exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XDG_CURRENT_SESSION=sway MOZ_DBUS_REMOTE=1 XDG_SESSION_DESKTOP=sway
 #exec export DISPLAY=:0
-exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY
+#exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY
+#exec gnome-keyring-daemon --start --components
 exec systemctl --user import-environment
 exec swaync
 bindsym $mod+Shift+n exec swaync-client -t -sw
@@ -38,15 +42,9 @@ bindsym $mod+Shift+n exec swaync-client -t -sw
 #exec dbus-update-activation-environment --all
 xwayland force
 #exec /usr/libexec/sway-systemd/session.sh
-#exec /usr/libexec/polkit-gnome-authentication-agent-1
-exec /usr/libexec/gsd-xsettings
-exec gnome-keyring-daemon --start --components=ssh
-exec export $(gnome-keyring-daemon)
+#exec /usr/libexec/gsd-xsettings
 exec xrdb -load ~/.Xresources
 #exec /usr/libexec/sway-systemd/wait-sni-ready && sleep 10 && systemctl --user start sway-xdg-autostart.target
-#exec nm-applet
-#exec blueman-applet
-#exec solaar
 
 # Stylings
 smart_gaps off
