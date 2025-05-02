@@ -3,7 +3,7 @@ exec dbus-update-activation-environment --systemd --all
 
 set $mod Mod4
 set $term kitty
-set $menu fuzzel | xargs swaymsg exec --
+set $menu fuzzel -D yes | xargs swaymsg exec --
 
 bar {
     swaybar_command waybar
@@ -60,6 +60,7 @@ output * bg #443311 solid_color
 bindsym $mod+Return exec $term
 bindsym $mod+Shift+q kill
 bindsym $mod+d exec $menu
+bindsym $mod+Shift+d exec fuzzel --list-executables-in-path -D yes | xargs swaymsg exec --
 floating_modifier $mod normal
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
@@ -178,7 +179,7 @@ client.focused_inactive     $elegant $elegant $acqua   $orange  $acqua
 client.urgent               $elegant $orange $silver  $orange  $orange
 client.placeholder          $elegant $orange $silver  $white    $orange
 
-set $power_mode "|| Menu: (p) poweroff, (r) reboot (q) quit sesion, (l) lockscreen ||"
+set $power_mode "|| Menu: (p) poweroff, (r) reboot (q) quit sway, (l) lock ||"
 bindsym $mod+Shift+p      mode $power_mode
 mode $power_mode {
     bindsym p         exec systemctl poweroff
