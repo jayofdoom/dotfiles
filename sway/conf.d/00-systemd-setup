@@ -1,0 +1,8 @@
+# Sway upstream does not set XDG_CURRENT_DESKTOP, so we have to get it into our environment
+exec systemctl --user set-environment XDG_CURRENT_DESKTOP=sway
+# Import items from our current environment into the systemctl user session.
+# includes *DISPLAY and SWAYSOCK variables which populate as sway starts, and XDG_CURRENT_DESKTOP set above.
+exec systemctl --user import-environment DISPLAY SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+# Update dbus environments with the same neccessary variables
+exec dbus-update-activation-environment --systemd DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP=sway WAYLAND_DISPLAY
+
