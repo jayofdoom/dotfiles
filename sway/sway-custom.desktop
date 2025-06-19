@@ -1,5 +1,0 @@
-[Desktop Entry]
-Name=CUSTOMSway
-Comment=An i3-compatible Wayland compositor
-Exec=/home/jay/.local/bin/sway-session
-Type=Application
