@@ -1,0 +1,68 @@
+# For specific Zoom windows
+#for_window [title="^(Zoom Workspace - Licensed account|About)$"] border pixel, floating enable
+# Open Zoom Meeting windows on a new workspace (a bit hacky)
+#for_window [app_id="zoom" title="Zoom Workspace Meeting(.*)?"] workspace next_on_output --create, move container to workspace current, floating disable, inhibit_idle o. Can be a regular expression.
+
+for_window [instance="zoom "] floating enable
+for_window [instance="zoom " title="Choose ONE of the audio conference options"] floating enable
+for_window [instance="zoom " title="zoom"] floating enable
+for_window [instance="zoom " title="Zoom Meeting"] floating disable
+for_window [instance="zoom " title="Zoom Workspace - Licensed account"] floating disable
+
+
+for_window [window_role = "pop-up"] floating enable
+for_window [window_role = "bubble"] floating enable
+for_window [window_role = "dialog"] floating enable
+for_window [window_type = "dialog"] floating enable
+for_window [window_role = "task_dialog"] floating enable
+for_window [window_type = "menu"] floating enable
+for_window [app_id = "floating"] floating enable
+for_window [app_id = "floating_update"] floating enable, resize set width 1000px height 600px
+for_window [class = "(?i)pinentry"] floating enable
+for_window [title = "Administrator privileges required"] floating enable
+
+for_window [title = "About Mozilla Firefox"] floating enable
+for_window [window_role = "About"] floating enable
+for_window [app_id="firefox" title="Library"] floating enable, border pixel 1, sticky enable
+
+for_window [title = "Firefox - Sharing Indicator"] kill
+for_window [title = "Firefox — Sharing Indicator"] kill
+
+for_window [class="^Steam$" title="^Friends$"] floating enable
+for_window [class="^Steam$" title="Steam - News"] floating enable
+for_window [class="^Steam$" title=".* - Chat"] floating enable
+for_window [class="^Steam$" title="^Settings$"] floating enable
+for_window [class="^Steam$" title=".* - event started"] floating enable
+for_window [class="^Steam$" title=".* CD key"] floating enable
+for_window [class="^Steam$" title="^Steam - Self Updater$"] floating enable
+for_window [class="^Steam$" title="^Screenshot Uploader$"] floating enable
+for_window [class="^Steam$" title="^Steam Guard - Computer Authorization Required$"] floating enable
+for_window [title="^Steam Keyboard$"] floating enable
+
+
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="bubble"] floating enable
+for_window [window_role="task_dialog"] floating enable
+for_window [window_role="Preferences"] floating enable
+
+for_window [window_role="task_dialog|bubble|page-info|Preferences|pop-up"] floating enable
+for_window [window_role="Open Files"] floating enable sticky
+for_window [window_role="File Operation Progress"] floating enable sticky
+for_window [window_role="Save As"] floating enable
+
+for_window [class="qBittorrent" window_role="pop-up"] floating enable
+for_window [class="$terminal -e alsamixer" window_role="Open"] floating enable
+#for_window [class="steam_app.*"] fullscreen enable
+#for_window [class="steam_app*"] inhibit_idle focus
+for_window [window_type="dialog"] floating enable
+for_window [window_type="menu"] floating enable
+#for_window [class="Nautilus"] floating enable
+
+# Sticky window
+for_window [instance="file_progress"]  sticky enable
+for_window [class="info|Mate-color-select|gcolor2|timesup|QtPass|GtkFileChooserDialog"] sticky enable
+
+# Focus window settings
+no_focus [window_role="pop-up"]
+#for_window [class="(?i)"] focus
+
