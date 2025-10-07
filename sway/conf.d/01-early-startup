@@ -19,7 +19,7 @@ exec /usr/libexec/gsd-xsettings
 xwayland force
 
 # if fonts look weird, re-enable me
-#exec xrdb -load ~/.Xresources
+exec xrdb -load ~/.Xresources
 
 focus_on_window_activation focus
 focus_follows_mouse no
