@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# ociso — run opencode in a credential-isolated container against a host codepath.
+#
+# Mounts (and nothing else):
+#   <dir>                      -> same path, read-write (read-only with --ro)
+#   ~/.cache/ociso/home        -> $HOME, at its REAL path (shadow home:
+#                                 scratch content, not your real home dir)
+#     ├ ~/.local/share/opencode -> same path (REAL — sessions/auth/DB)
+#     ├ ~/.config/opencode      -> same path (REAL — global config)
+#     └ ~/.cache/opencode       -> same path (REAL — package cache)
+#   optional --config FILE     -> /ociso-config.json (RO, via OPENCODE_CONFIG)
+#
+# So the codepath AND $HOME sit at their real host paths; everything else
+# in your real home (gnupg, ssh, aws, ...) never enters the container.
+# Writes to $HOME paths outside the real opencode subtrees land in the
+# shadow scratch dir — disposable, nothing EROFSes.
+# No locks, no state, no instance tracking. `docker ps` is the instance list.
+set -euo pipefail
+
+IMAGE="${OCISO_IMAGE:-ociso:latest}"
+
+usage() {
+  cat <<EOF
+Usage: ociso <dir> [options] [-- opencode-args...]
+
+Options:
+  --config FILE   Inject FILE as OPENCODE_CONFIG (sits between global and
+                  project config; the repo's own opencode.json still wins)
+  --ro            Mount the codepath read-only
+  --shell         Drop into bash instead of opencode (for debugging)
+  --env K=V       Pass an env var into the container (repeatable; for
+                  {env:...} substitution in config)
+  -h, --help      Show this help
+
+Environment:
+  OCISO_IMAGE     Image to run (default: ociso:latest)
+EOF
+  exit "${1:-0}"
+}
+
+dir="" config="" ro="" shell=""
+envs=() passthrough=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config)  [[ $# -ge 2 ]] || usage 1; config="$2"; shift 2 ;;
+    --ro)      ro=1; shift ;;
+    --shell)   shell=1; shift ;;
+    --env)     [[ $# -ge 2 ]] || usage 1; envs+=(-e "$2"); shift 2 ;;
+    -h|--help) usage 0 ;;
+    --)        shift; passthrough=("$@"); break ;;
+    -*)        echo "ociso: unknown option: $1" >&2; usage 1 ;;
+    *)         if [[ -z "$dir" ]]; then dir="$1"; shift
+               else echo "ociso: unexpected argument: $1" >&2; usage 1; fi ;;
+  esac
+done
+[[ -n "$dir" ]] || usage 1
+dir="$(realpath -e "$dir")" || exit 1
+[[ -d "$dir" ]] || { echo "ociso: not a directory: $dir" >&2; exit 1; }
+
+# Shadow home: the container sees $HOME at its real path, but the directory
+# comes from scratch — your actual home never enters the container. The real
+# opencode subtrees are mounted inside it at their real paths, so every path
+# opencode sees matches the host. Anything else it writes to $HOME lands in
+# the scratch dir (disposable, safe to delete anytime).
+SHADOW="$HOME/.cache/ociso/home"
+# The skeleton inside the shadow is created AS YOU, before docker runs: the
+# docker daemon creates missing bind-mount targets as root, which would
+# leave root-owned dirs in the shadow and EACCES the container user later.
+mkdir -p "$SHADOW/.local/share" \
+         "$SHADOW/.local/state" \
+         "$SHADOW/.config" \
+         "$SHADOW/.cache" \
+         "$SHADOW/.local/share/opencode" \
+         "$SHADOW/.config/opencode" \
+         "$SHADOW/.cache/opencode" \
+         "$HOME/.local/share/opencode" \
+         "$HOME/.config/opencode" \
+         "$HOME/.cache/opencode"
+
+mounts=(
+  -v "$dir":"$dir${ro:+:ro}"
+  -w "$dir"
+  -v "$SHADOW":"$HOME"
+  -v "$HOME/.local/share/opencode":"$HOME/.local/share/opencode"
+  -v "$HOME/.config/opencode":"$HOME/.config/opencode"
+  -v "$HOME/.cache/opencode":"$HOME/.cache/opencode"
+)
+
+if [[ -n "$config" ]]; then
+  config="$(realpath -e "$config")" || exit 1
+  mounts+=(-v "$config":/ociso-config.json:ro)
+  envs+=(-e OPENCODE_CONFIG=/ociso-config.json)
+fi
+
+# The image ENTRYPOINT is already `opencode` — everything after the image
+# name is ARGUMENTS. (An earlier version prepended `opencode` to the args,
+# so the container ran `opencode opencode [dir]` — the real cause of the
+# "Failed to change directory to .../opencode" and usage-print failures,
+# misdiagnosed at the time as an upstream CLI quirk; probing both 1.18.31
+# and 1.18.34 confirmed `opencode <dir>` is valid.)
+# Normal run: `opencode <dir>` (root-level directory positional).
+# Passthrough: args as-is; cwd (-w) is already the codepath.
+# Debug shell: override the entrypoint with bash.
+if [[ -n "$shell" ]]; then
+  cmd=(-l)
+  entry=(--entrypoint bash)
+elif [[ ${#passthrough[@]} -gt 0 ]]; then
+  cmd=("${passthrough[@]}")
+  entry=()
+else
+  cmd=("$dir")
+  entry=()
+fi
+
+exec docker run -it --rm \
+  --user "$(id -u):$(id -g)" \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges \
+  --read-only \
+  --tmpfs /tmp:rw,exec,nosuid,nodev \
+  -e HOME="$HOME" \
+  -e USER="${USER:-user}" \
+  "${mounts[@]}" \
+  "${envs[@]}" \
+  "${entry[@]}" \
+  "$IMAGE" \
+  "${cmd[@]}"
