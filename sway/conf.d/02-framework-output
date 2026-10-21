@@ -3,9 +3,9 @@ set $midmon 'LG Electronics LG ULTRAGEAR 309MXDM2U722'
 #set $midmon DP-9
 #set $dualup DP-10
 set $laptop eDP-1
-output $dualup resolution 2560x2880 position 0 0 scale 1
+output $dualup resolution 2560x2880 position 0 0 scale 1 disable
 #output $dualup resolution 2560x2880 position 0 1504 scale 1
-output $midmon resolution 2560x1440 position 2560 720 scale 1 
+output $midmon resolution 2560x1440 position 2560 720 scale 1 disable 
 #output $laptop resolution 2256x1504 position 0 0 scale 1
 output $laptop resolution 2880x1920 position 0 0 scale 1.5
 #output DP-2 resolution 1920x1080 position 0 0 scale 1

@@ -10,16 +10,16 @@ bar {
     }
 }
 
-exec swaync
+#exec swaync
 
 # Wait until the notification center is on the dbus, then autostart items
-exec "/usr/libexec/sway-systemd/wait-sni-ready && systemctl --user start sway-xdg-autostart.target"
+#exec "/usr/libexec/sway-systemd/wait-sni-ready && systemctl --user start sway-xdg-autostart.target"
 
-exec /usr/libexec/gsd-xsettings
+#exec /usr/libexec/gsd-xsettings
 xwayland force
 
 # if fonts look weird, re-enable me
-exec xrdb -load ~/.Xresources
+#exec xrdb -load ~/.Xresources
 
 focus_on_window_activation focus
 focus_follows_mouse no
