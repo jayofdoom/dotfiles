@@ -38,15 +38,17 @@ SQLite DB; forward migrations are fine, downgrades are the risky direction.
 
 Options: `--config FILE` (OPENCODE_CONFIG — sits between global and project
 config, so a repo's own `opencode.json` still wins), `--ro`, `--shell`,
-`--env K=V` (repeatable, for `{env:...}` config substitution), `--` passes
-everything after it to opencode. `OCISO_IMAGE` overrides the image name
-(default `ociso:latest`).
+`--mount DIR` (repeatable; extra codepaths, mounted RW at their real paths —
+e.g. `ociso ~/odev/nova --mount ~/odev` gives a review the sibling
+checkouts), `--env K=V` (repeatable, for `{env:...}` config substitution),
+`--` passes everything after it to opencode. `OCISO_IMAGE` overrides the
+image name (default `ociso:latest`).
 
 ## Security boundary
 
 | Inside | Outside (requires container breakout) |
 |---|---|
-| Codepath you point at (RW, in place) | `~/.gnupg`, `~/.ssh`, `~/.aws`, dotfiles, browser profiles |
+| Codepaths you point at (`<dir>` + `--mount`, RW, in place) | `~/.gnupg`, `~/.ssh`, `~/.aws`, dotfiles, browser profiles |
 | Real opencode sessions/config/cache | GPG/SSH agent sockets |
 | Provider auth (`auth.json`) — by design | Rest of `$HOME` |
 

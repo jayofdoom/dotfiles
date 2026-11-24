@@ -7,13 +7,19 @@ Resolves the change on review.opendev.org, fetches only its patchset ref
 into your existing local checkout (never clones), checks it out in a
 disposable worktree, preps all review artifacts with the skill's own
 scripts, then starts an interactive ociso session pre-seeded with the
-review request.
+review request. Artifacts and the worktree live in
+<repo>/.teim-review/<change>/ — one directory per change — so reviews of
+different changes can run at the same time. All of ~/odev is mounted
+alongside the checkout, so the reviewer can consult sibling codebases
+and the style guide.
 """
-import json, os, re, shutil, subprocess, sys, urllib.request
+import hashlib, json, os, re, shutil, subprocess, sys, urllib.request
 
-STYLE = os.path.expanduser("~/odev/openstack-ai-style-guide")
+ODEV = os.path.expanduser("~/odev")
+STYLE = f"{ODEV}/openstack-ai-style-guide"
 SKILL = f"{STYLE}/skills/teim-review"
-OCISO = os.path.expanduser("~/jdev/dotfiles/scripts/ociso/ociso")
+# The ociso that ships beside this script, whatever checkout runs it.
+OCISO = os.path.join(os.path.dirname(os.path.realpath(__file__)), "ociso")
 GERRIT = "https://review.opendev.org"
 
 change = sys.argv[1] if len(sys.argv) > 1 else ""
@@ -26,7 +32,7 @@ raw = urllib.request.urlopen(f"{GERRIT}/changes/{change}/detail?o=CURRENT_REVISI
 d = json.loads(raw.partition(b"\n")[2])
 sha, rev = d["current_revision"], d["revisions"][d["current_revision"]]
 ps, subject = rev["_number"], d["subject"]
-repo = os.path.expanduser(f"~/odev/{d['project'].rsplit('/', 1)[-1]}")
+repo = f"{ODEV}/{d['project'].rsplit('/', 1)[-1]}"
 if not os.path.isdir(repo):
     sys.exit(f"teim: no local checkout of {d['project']} under ~/odev (I won't clone)")
 
@@ -37,10 +43,48 @@ remotes = subprocess.run(["git", "-C", repo, "remote", "-v"], capture_output=Tru
 remote = next((r.split()[0] for r in remotes.splitlines() if "opendev.org" in r), None)
 run(["git", "-C", repo, "fetch", "-q", remote, f"refs/changes/{change[-2:]}/{change}/{ps}"])
 
-out, wt = f"{repo}/.teim-review", f"{repo}/.teim-review/review-worktree"
+out, wt = f"{repo}/.teim-review/{change}", f"{repo}/.teim-review/{change}/review-worktree"
 os.makedirs(out, exist_ok=True)
 subprocess.run(["git", "-C", repo, "worktree", "remove", "--force", wt], capture_output=True)
 run(["git", "-C", repo, "worktree", "add", "-q", "--detach", wt, sha])
+
+# Sync BEFORE prep and run prep from the synced copy: this is how opencode
+# discovers the skill (~/.config/opencode/skills is mounted), and the
+# skill paths recorded in review-context.json must resolve inside the
+# container too. Sync only when the content actually changed,
+# so a second teim run can't delete the skill out from under a session
+# that is already using it; when it has changed, copy in place (no
+# rmtree window) and prune entries the source no longer has. The
+# fingerprint ignores __pycache__ so .pyc files from earlier prep runs
+# never trigger a pointless re-sync.
+def fingerprint(root):
+    fp = {}
+    for base, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for name in files:
+            p = os.path.join(base, name)
+            with open(p, "rb") as fh:
+                fp[os.path.relpath(p, root)] = hashlib.sha256(fh.read()).hexdigest()
+    return fp
+
+dst = os.path.expanduser("~/.config/opencode/skills/teim-review")
+src_fp = fingerprint(SKILL)
+if src_fp != fingerprint(dst):
+    shutil.copytree(SKILL, dst, dirs_exist_ok=True)
+    for base, dirs, files in os.walk(dst, topdown=False):
+        for name in files:
+            p = os.path.join(base, name)
+            if os.path.relpath(p, dst) not in src_fp:
+                try:
+                    os.unlink(p)
+                except FileNotFoundError:
+                    pass
+        for d in dirs:
+            try:
+                os.rmdir(os.path.join(base, d))
+            except OSError:
+                pass
+SKILL = dst
 
 py = sys.executable
 changed = f"{out}/changed-files.txt"
@@ -56,10 +100,6 @@ run([py, f"{SKILL}/scripts/prepare_review_artifacts.py", "--project-dir", wt,
      "--candidate-schema", f"{SKILL}/references/schemas/candidate-findings-schema.json",
      "--validated-schema", f"{SKILL}/references/schemas/validated-findings-schema.json"])
 
-dst = os.path.expanduser("~/.config/opencode/skills/teim-review")   # container sees this,
-shutil.rmtree(dst, ignore_errors=True)                              # not ~/odev — keep it fresh
-shutil.copytree(SKILL, dst)
-
 prompt = f"""@teim-review Preparation is already complete; verify and use these artifacts.
 
 - project_dir: {wt}
@@ -74,4 +114,7 @@ Proceed directly to candidate generation and validation per your workflow."""
 
 print(f"teim: change {change} ps{ps} — {subject}")
 print(f"teim: report will land in {out}; worktree: {wt}")
-os.execvp(OCISO, [OCISO, repo, "--", "--standalone", "--auto", "--prompt", prompt])
+# Repo stays the primary codepath (cwd + project identity); all of ~/odev
+# rides along read-write for sibling checkouts and the style guide.
+os.execvp(OCISO, [OCISO, repo, "--mount", ODEV,
+                  "--", "--standalone", "--auto", "--prompt", prompt])

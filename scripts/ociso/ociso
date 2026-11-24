@@ -9,6 +9,8 @@
 #     ├ ~/.config/opencode      -> same path (REAL — global config)
 #     └ ~/.cache/opencode       -> same path (REAL — package cache)
 #   optional --config FILE     -> /ociso-config.json (RO, via OPENCODE_CONFIG)
+#   optional --mount DIR       -> same path, read-write (repeatable; extra
+#                                 codepaths, e.g. sibling checkouts)
 #
 # So the codepath AND $HOME sit at their real host paths; everything else
 # in your real home (gnupg, ssh, aws, ...) never enters the container.
@@ -27,6 +29,8 @@ Options:
   --config FILE   Inject FILE as OPENCODE_CONFIG (sits between global and
                   project config; the repo's own opencode.json still wins)
   --ro            Mount the codepath read-only
+  --mount DIR     Also mount DIR at its real path, read-write (repeatable;
+                  extra codepaths beyond <dir>, e.g. sibling checkouts)
   --shell         Drop into bash instead of opencode (for debugging)
   --env K=V       Pass an env var into the container (repeatable; for
                   {env:...} substitution in config)
@@ -39,13 +43,14 @@ EOF
 }
 
 dir="" config="" ro="" shell=""
-envs=() passthrough=()
+envs=() extras=() passthrough=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --config)  [[ $# -ge 2 ]] || usage 1; config="$2"; shift 2 ;;
     --ro)      ro=1; shift ;;
     --shell)   shell=1; shift ;;
     --env)     [[ $# -ge 2 ]] || usage 1; envs+=(-e "$2"); shift 2 ;;
+    --mount)   [[ $# -ge 2 ]] || usage 1; extras+=("$2"); shift 2 ;;
     -h|--help) usage 0 ;;
     --)        shift; passthrough=("$@"); break ;;
     -*)        echo "ociso: unknown option: $1" >&2; usage 1 ;;
@@ -56,6 +61,17 @@ done
 [[ -n "$dir" ]] || usage 1
 dir="$(realpath -e "$dir")" || exit 1
 [[ -d "$dir" ]] || { echo "ociso: not a directory: $dir" >&2; exit 1; }
+
+# Extra codepaths (--mount), at their real paths, read-write. Nested binds
+# are fine (--mount ~/odev while <dir> is ~/odev/nova): nested mounts apply
+# parents-first, so the primary lands on top where the paths overlap — the
+# primary already relies on this, sitting inside the shadow-$HOME mount.
+extra_mounts=()
+for e in "${extras[@]}"; do
+  e="$(realpath -e "$e")" || exit 1
+  [[ -d "$e" ]] || { echo "ociso: not a directory: $e" >&2; exit 1; }
+  extra_mounts+=(-v "$e":"$e")
+done
 
 # Shadow home: the container sees $HOME at its real path, but the directory
 # comes from scratch — your actual home never enters the container. The real
@@ -80,6 +96,7 @@ mkdir -p "$SHADOW/.local/share" \
 mounts=(
   -v "$dir":"$dir${ro:+:ro}"
   -w "$dir"
+  "${extra_mounts[@]}"
   -v "$SHADOW":"$HOME"
   -v "$HOME/.local/share/opencode":"$HOME/.local/share/opencode"
   -v "$HOME/.config/opencode":"$HOME/.config/opencode"
