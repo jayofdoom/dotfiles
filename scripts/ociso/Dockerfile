@@ -39,7 +39,7 @@ FROM alpine:latest
 # curl: HTTP egress / downloads.
 # jq: JSON parsing in scripts.
 # git-review: Gerrit code review tool, only in Alpine's community repo.
-RUN apk add --no-cache bash ca-certificates curl git jq libgcc libstdc++ python3 py3-pip py3-tox \
+RUN apk add --no-cache bash ca-certificates curl git jq libgcc libstdc++ python3 py3-pip py3-tox py3-yaml py3-jsonschema grep \
     && apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community git-review
 COPY --from=installer /usr/local/lib/node_modules/@opencode/cli/bin/opencode.exe /usr/local/bin/opencode
 

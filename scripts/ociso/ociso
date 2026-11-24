@@ -86,6 +86,14 @@ mounts=(
   -v "$HOME/.cache/opencode":"$HOME/.cache/opencode"
 )
 
+# Host terminfo, read-only. Alpine's ncurses ships a minimal set — no
+# foot/xterm-kitty entries, so TUIs misbehave under those terminals (foot
+# dies outright). The compiled format is portable (same endianness as the
+# host), so the whole set mounts in: covers every TERM you might launch
+# from, and a host terminfo update (e.g. a foot upgrade) is picked up with
+# no image rebuild.
+[[ -d /usr/share/terminfo ]] && mounts+=(-v /usr/share/terminfo:/usr/share/terminfo:ro)
+
 if [[ -n "$config" ]]; then
   config="$(realpath -e "$config")" || exit 1
   mounts+=(-v "$config":/ociso-config.json:ro)
@@ -98,7 +106,9 @@ fi
 # "Failed to change directory to .../opencode" and usage-print failures,
 # misdiagnosed at the time as an upstream CLI quirk; probing both 1.18.31
 # and 1.18.34 confirmed `opencode <dir>` is valid.)
-# Normal run: `opencode <dir>` (root-level directory positional).
+# Normal run: `opencode --standalone <dir>` — private server per container,
+# so concurrent containers don't fight over the shared service
+# registration in the real ~/.config/opencode.
 # Passthrough: args as-is; cwd (-w) is already the codepath.
 # Debug shell: override the entrypoint with bash.
 if [[ -n "$shell" ]]; then
@@ -108,7 +118,7 @@ elif [[ ${#passthrough[@]} -gt 0 ]]; then
   cmd=("${passthrough[@]}")
   entry=()
 else
-  cmd=("$dir")
+  cmd=(--standalone "$dir")
   entry=()
 fi
 

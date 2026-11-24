@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""teim — review a Gerrit change with the teim-review skill, via ociso.
+
+Usage: teim <change-number-or-url>
+
+Resolves the change on review.opendev.org, fetches only its patchset ref
+into your existing local checkout (never clones), checks it out in a
+disposable worktree, preps all review artifacts with the skill's own
+scripts, then starts an interactive ociso session pre-seeded with the
+review request.
+"""
+import json, os, re, shutil, subprocess, sys, urllib.request
+
+STYLE = os.path.expanduser("~/odev/openstack-ai-style-guide")
+SKILL = f"{STYLE}/skills/teim-review"
+OCISO = os.path.expanduser("~/jdev/dotfiles/scripts/ociso/ociso")
+GERRIT = "https://review.opendev.org"
+
+change = sys.argv[1] if len(sys.argv) > 1 else ""
+if not change.isdigit():
+    m = re.search(r"/\+/(\d+)", change) or sys.exit("usage: teim <change-number-or-url>")
+    change = m.group(1)
+
+# Gerrit prefixes REST JSON with a ")]}'" XSSI-guard line; [2] = body after it.
+raw = urllib.request.urlopen(f"{GERRIT}/changes/{change}/detail?o=CURRENT_REVISION").read()
+d = json.loads(raw.partition(b"\n")[2])
+sha, rev = d["current_revision"], d["revisions"][d["current_revision"]]
+ps, subject = rev["_number"], d["subject"]
+repo = os.path.expanduser(f"~/odev/{d['project'].rsplit('/', 1)[-1]}")
+if not os.path.isdir(repo):
+    sys.exit(f"teim: no local checkout of {d['project']} under ~/odev (I won't clone)")
+
+def run(cmd, **kw):
+    subprocess.run(cmd, check=True, **kw)
+
+remotes = subprocess.run(["git", "-C", repo, "remote", "-v"], capture_output=True, text=True).stdout
+remote = next((r.split()[0] for r in remotes.splitlines() if "opendev.org" in r), None)
+run(["git", "-C", repo, "fetch", "-q", remote, f"refs/changes/{change[-2:]}/{change}/{ps}"])
+
+out, wt = f"{repo}/.teim-review", f"{repo}/.teim-review/review-worktree"
+os.makedirs(out, exist_ok=True)
+subprocess.run(["git", "-C", repo, "worktree", "remove", "--force", wt], capture_output=True)
+run(["git", "-C", repo, "worktree", "add", "-q", "--detach", wt, sha])
+
+py = sys.executable
+changed = f"{out}/changed-files.txt"
+run([py, f"{SKILL}/scripts/detect_changed_files.py", wt, "--output", changed])
+run([py, f"{SKILL}/scripts/detect_changed_lines.py", wt,
+     "--ref1", "HEAD^", "--ref2", "HEAD", "--output", f"{out}/changed-lines.json"])
+run([py, f"{SKILL}/scripts/prepare_review_artifacts.py", "--project-dir", wt,
+     "--output-dir", out, "--changed-files", changed,
+     "--quick-rules", f"{SKILL}/references/quick-rules.md",
+     "--comprehensive-guide", f"{SKILL}/references/comprehensive-guide.md",
+     "--finding-policy", f"{SKILL}/references/finding-policy.md",
+     "--knowledge-root", f"{SKILL}/references/knowledge",
+     "--candidate-schema", f"{SKILL}/references/schemas/candidate-findings-schema.json",
+     "--validated-schema", f"{SKILL}/references/schemas/validated-findings-schema.json"])
+
+dst = os.path.expanduser("~/.config/opencode/skills/teim-review")   # container sees this,
+shutil.rmtree(dst, ignore_errors=True)                              # not ~/odev — keep it fresh
+shutil.copytree(SKILL, dst)
+
+prompt = f"""@teim-review Preparation is already complete; verify and use these artifacts.
+
+- project_dir: {wt}
+- output_dir: {out}
+- scope: Gerrit change {change} patchset {ps} ({subject}), HEAD^..HEAD in the review worktree
+- changed_files_file: {changed}
+- commit_summary_file: {out}/commit-summary.md
+- project_guidelines_file: {out}/project-guidelines.md
+- review_context_file: {out}/review-context.json
+
+Proceed directly to candidate generation and validation per your workflow."""
+
+print(f"teim: change {change} ps{ps} — {subject}")
+print(f"teim: report will land in {out}; worktree: {wt}")
+os.execvp(OCISO, [OCISO, repo, "--", "--standalone", "--auto", "--prompt", prompt])
